@@ -19,6 +19,9 @@ PDE-NHF/data/*.npy
 PDE-NHF/models/model/model_final
 PDE-NHF/models/model/optimizer_final
 PDE-NHF/models/model/*.npy
+# PDE-NHF 双流实验 — 仅排除优化器（体积大），保留模型权重和 loss 曲线
+PDE-NHF/models/two_stream/optimizer*
+PDE-NHF/models/two_stream/*.npy
 
 # 输出目录中的占位文件保留，其他忽略
 ppt/*
