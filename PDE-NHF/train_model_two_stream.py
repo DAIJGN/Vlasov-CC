@@ -21,17 +21,17 @@ class Parser:
                                  help='模型保存目录')
         self.parser.add_argument('-FOLDER_DATA', default='data/two_stream/', type=str, dest='FOLDER_DATA',
                                  help='数据加载目录')
-        self.parser.add_argument('-N_TRAINING', default=800, type=int, dest='N_TRAINING',
+        self.parser.add_argument('-N_TRAINING', default=400, type=int, dest='N_TRAINING',
                                  help='训练样本数')
-        self.parser.add_argument('-N_VALIDATION', default=200, type=int, dest='N_VALIDATION',
+        self.parser.add_argument('-N_VALIDATION', default=100, type=int, dest='N_VALIDATION',
                                  help='验证样本数')
-        self.parser.add_argument('-L', default=100, type=int, dest='L',
+        self.parser.add_argument('-L', default=10, type=int, dest='L',
                                  help='蛙跳积分器步数')
-        self.parser.add_argument('-DT', default=0.1, type=float, dest='DT',
+        self.parser.add_argument('-DT', default=0.25, type=float, dest='DT',
                                  help='蛙跳积分器时间步长')
-        self.parser.add_argument('-N_EPOCHS', default=500, type=int, dest='N_EPOCHS',
+        self.parser.add_argument('-N_EPOCHS', default=200, type=int, dest='N_EPOCHS',
                                  help='训练轮数')
-        self.parser.add_argument('-BATCH_SIZE', default=32, type=int, dest='BATCH_SIZE',
+        self.parser.add_argument('-BATCH_SIZE', default=128, type=int, dest='BATCH_SIZE',
                                  help='小批量大小')
         self.parser.add_argument('-LR', default=0.0003, type=float, dest='LR',
                                  help='Adam 优化器学习率')
@@ -65,8 +65,8 @@ if __name__ == "__main__":
     L_domain = 10.0
 
     # 加载最终时刻数据 (t=10.0, step 100)
-    Q = np.load(folder_data + 'Q100.npy')
-    P = np.load(folder_data + 'P100.npy')
+    Q = np.load(folder_data + 'Q25.npy')
+    P = np.load(folder_data + 'P25.npy')
     Cond = np.load(folder_data + 'Cond.npy')  # [v_stream, v_spread, A_perturb]
 
     Q_train_np, P_train_np, Cond_train_np = Q[:N_train], P[:N_train], Cond[:N_train]

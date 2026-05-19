@@ -23,6 +23,20 @@ PDE-NHF/models/model/*.npy
 PDE-NHF/models/two_stream/optimizer*
 PDE-NHF/models/two_stream/*.npy
 
+# PDE-NHF 双流子目录数据文件（体积大，可重新生成）
+PDE-NHF/data/two_stream/vspread_*/
+
+# PDE-NHF 双流子目录优化器（体积大）
+PDE-NHF/models/two_stream/vspread_*/optimizer*
+
+# Claude Code agent 记忆（个人数据，不纳入版本控制）
+.claude/agent-memory/
+
+# LobeHub 安装的外部 skills（可通过 npx @lobehub/market-cli 重新安装）
+.claude/skills/anthropics-skills-pptx/
+.claude/skills/anthropics-skills-pdf/
+.claude/skills/anthropics-skills-skill-creator/
+
 # 输出目录中的占位文件保留，其他忽略
 ppt/*
 !ppt/.gitkeep

@@ -24,7 +24,26 @@
       "Read(//mnt/c/Users/18735/AppData/Local/Programs/**)",
       "Read(//c/Users/18735/anaconda3/**)",
       "Read(//c/Users/18735/miniconda3/**)",
-      "Read(//c/Users/18735/**)"
+      "Read(//c/Users/18735/**)",
+      "Bash(python3 -c \"import fitz; print\\('pymupdf available'\\)\")",
+      "Bash(python3 -c \"import PyPDF2; print\\('PyPDF2 available'\\)\")",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" generate_data_two_stream.py -SEED=100 -N_EXAMPLES=500 -N_PARTICLES=256 -MIN_V_STREAM=0.8 -MAX_V_STREAM=1.5 -MIN_V_SPREAD=0.05 -MAX_V_SPREAD=0.05 -MIN_A_PERTURB=0.001 -MAX_A_PERTURB=0.01 -FOLDER_DATA=\"data/two_stream/vspread_005/\")",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" generate_data_two_stream.py -SEED=200 -N_EXAMPLES=500 -N_PARTICLES=256 -MIN_V_STREAM=0.8 -MAX_V_STREAM=1.5 -MIN_V_SPREAD=0.1 -MAX_V_SPREAD=0.1 -MIN_A_PERTURB=0.001 -MAX_A_PERTURB=0.01 -FOLDER_DATA=\"data/two_stream/vspread_010/\")",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" generate_data_two_stream.py -SEED=300 -N_EXAMPLES=500 -N_PARTICLES=256 -MIN_V_STREAM=0.8 -MAX_V_STREAM=1.5 -MIN_V_SPREAD=0.2 -MAX_V_SPREAD=0.2 -MIN_A_PERTURB=0.001 -MAX_A_PERTURB=0.01 -FOLDER_DATA=\"data/two_stream/vspread_020/\")",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" train_model_two_stream.py -SEED=100 -FOLDER_DATA=\"data/two_stream/vspread_005/\" -FOLDER_EXP=\"models/two_stream/vspread_005/\" -N_TRAINING=400 -N_VALIDATION=100 -L=10 -DT=0.25 -N_EPOCHS=200 -BATCH_SIZE=128 -LR=0.0003)",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" train_model_two_stream.py -SEED=200 -FOLDER_DATA=\"data/two_stream/vspread_010/\" -FOLDER_EXP=\"models/two_stream/vspread_010/\" -N_TRAINING=400 -N_VALIDATION=100 -L=10 -DT=0.25 -N_EPOCHS=200 -BATCH_SIZE=128 -LR=0.0003)",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" train_model_two_stream.py -SEED=300 -FOLDER_DATA=\"data/two_stream/vspread_020/\" -FOLDER_EXP=\"models/two_stream/vspread_020/\" -N_TRAINING=400 -N_VALIDATION=100 -L=10 -DT=0.25 -N_EPOCHS=200 -BATCH_SIZE=128 -LR=0.0003)",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" train_model_two_stream.py -SEED=300 -FOLDER_DATA=\"data/two_stream/vspread_020/\" -FOLDER_EXP=\"models/two_stream/vspread_020/\" -N_TRAINING=400 -N_VALIDATION=100 -L=10 -DT=0.25 -N_EPOCHS=200 -BATCH_SIZE=64 -LR=0.0003)",
+      "Bash(D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe -c ' *)",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" train_model_two_stream.py -SEED=200 -FOLDER_DATA=\"data/two_stream/vspread_010/\" -FOLDER_EXP=\"models/two_stream/vspread_010/\" -N_TRAINING=400 -N_VALIDATION=100 -L=10 -DT=0.25 -N_EPOCHS=200 -BATCH_SIZE=64 -LR=0.0003)",
+      "Bash(\"D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe\" train_model_two_stream.py -SEED=100 -FOLDER_DATA=\"data/two_stream/vspread_005/\" -FOLDER_EXP=\"models/two_stream/vspread_005/\" -N_TRAINING=400 -N_VALIDATION=100 -L=10 -DT=0.25 -N_EPOCHS=200 -BATCH_SIZE=64 -LR=0.0003)",
+      "Bash(D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe ppt/generate_ppt_20260513.py)",
+      "Bash(D:/software/Anaconda/Anaconda/envs/DP_learn_torch/python.exe *)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -sL \"https://lobehub.com/skills/anthropics-skills-pptx/skill.md\")",
+      "Bash(npx *)",
+      "Bash(curl -sL \"https://lobehub.com/skills/anthropics-skills-pdf/skill.md\")",
+      "Bash(git add *)"
     ]
   }
 }
