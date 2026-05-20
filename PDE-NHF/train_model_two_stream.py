@@ -1,15 +1,19 @@
 # 双流不稳定性 PDE-NHF 训练脚本
 # 基于 train_model.py 改造，适配双流先验分布和参数
 
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import torch
 import torch.nn as nn
-import torch.distributions as D
-from torch.autograd import grad
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 import numpy as np
 import random
 import argparse
+
+from shared.models.potential import Potential
+from shared.models.hamiltonian import TwoStreamPriorNHF
 
 
 class Parser:
@@ -108,96 +112,11 @@ if __name__ == "__main__":
     # 模型定义
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    class Potential(nn.Module):
-        """置换不变的势能网络 (Deep Set 架构)"""
-        def __init__(self, hidden_dim=256):
-            super().__init__()
-            self.phi = nn.Sequential(
-                nn.Linear(1, hidden_dim),
-                nn.Softplus(),
-                nn.Linear(hidden_dim, hidden_dim)
-            )
-            self.rho = nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.Softplus(),
-                nn.Linear(hidden_dim, 1)
-            )
-
-        def forward(self, q):
-            q_centered = q - q.mean(dim=1, keepdim=True)
-            phi_q = self.phi(q_centered.unsqueeze(-1))
-            pooled = phi_q.sum(dim=1)
-            return self.rho(pooled).squeeze(-1)
-
-    class NeuralHamiltonianFlow(nn.Module):
-        def __init__(self, L_steps, dt):
-            super().__init__()
-            self.L = L_steps
-            self.dt = dt
-            self.V_net = Potential()
-            self.register_parameter(name='a', param=torch.nn.Parameter(1.0 * torch.ones(1)))
-
-        def potential_energy(self, q):
-            return self.V_net(q)
-
-        def leapfrog_integrator(self, q, p, L_steps, dt):
-            V = self.potential_energy(q)
-            grad_q, = grad(V.sum(), q, create_graph=True)
-
-            for step in range(L_steps):
-                p = p - 0.5 * dt * grad_q
-                q = q + self.a**2 * p * dt
-                V = self.potential_energy(q)
-                grad_q, = grad(V.sum(), q, create_graph=True)
-                p = p - 0.5 * dt * grad_q
-
-            return q, p
-
-        def forward(self, q, p, cond):
-            # cond: (B, 3) = [v_stream, v_spread, A_perturb]
-            v_stream = cond[:, 0].unsqueeze(1)   # (B, 1)
-            v_spread = cond[:, 1].unsqueeze(1)   # (B, 1)
-
-            q.requires_grad, p.requires_grad = True, True
-
-            # 反向蛙跳积分：从最终状态回到初始状态
-            q, p = self.leapfrog_integrator(q, p, self.L, self.dt)
-            return q, p, v_stream, v_spread
-
-        def loss(self, q, p, cond):
-            q0, p0, v_stream, v_spread = self.forward(q, p, cond)
-
-            # 先验分布 p0: 混合高斯 0.5*N(+v_stream, v_spread²) + 0.5*N(-v_stream, v_spread²)
-            log_p1 = D.Normal(v_stream, v_spread).log_prob(p0)  # (B, N)
-            log_p2 = D.Normal(-v_stream, v_spread).log_prob(p0)  # (B, N)
-            log_pi_p0 = torch.logsumexp(
-                torch.stack([
-                    log_p1 + np.log(0.5),
-                    log_p2 + np.log(0.5)
-                ], dim=-1),
-                dim=-1
-            )  # (B, N)
-            log_pi_p0 = log_pi_p0.sum(dim=1)  # (B,)
-
-            # 先验分布 q0: 均匀分布 U(0, L_domain)
-            # log_prob = -log(L_domain) per particle, 常数项不影响优化
-            log_pi_q0 = -np.log(L_domain) * q0.shape[1]  # 常数
-
-            # KL 损失 (q 项为常数，仅 p 项驱动训练)
-            return -(log_pi_q0 + log_pi_p0).mean()
-
-        def sample(self, q0, p0, nsteps, delta_t):
-            """从初始状态正向积分到最终状态"""
-            q0.requires_grad, p0.requires_grad = True, True
-            q0, p0 = q0.unsqueeze(0), p0.unsqueeze(0)
-            q, p = self.leapfrog_integrator(q0, p0, nsteps, -delta_t)
-            return q.detach(), p.detach()
-
     set_seed(random_seed)
 
     L_steps = parser.args.L
-    dt = -parser.args.DT  # 负值：反向哈密顿动力学（训练时从最终回到初始）
-    model = NeuralHamiltonianFlow(L_steps=L_steps, dt=dt)
+    dt = -parser.args.DT  # 负值：反向哈密顿动力学
+    model = TwoStreamPriorNHF(L_steps=L_steps, dt=dt, L_domain=L_domain)
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"模型参数量: {n_parameters}")
     print(f"蛙跳步数 L={L_steps}, dt={dt}")

@@ -1,0 +1,23 @@
+{
+  "skill_name": "project-scaffold",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我刚开始一个新的研究项目，要用PINN求解Burgers方程。现在只有一个main.py文件，里面有PIC模拟代码和训练代码共300行。我以后可能会加更多算例。帮我建立合适的项目架构。",
+      "expected_output": "应该被识别为介于Tier 1和Tier 2之间。需要创建CLAUDE.md（路由索引），分析main.py中是否存在重复可提取的组件。不应该创建完整的四层架构（过度设计）。至少应该建议拆分PIC模拟和训练代码，并创建knowledge/目录存放架构说明。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "帮我整理一下这个项目，文件夹太乱了。目前有5个Python文件都在根目录下，每个文件里都复制粘贴了相同的PIC求解器代码（CIC沉积+FFT Poisson）。我自己都搞不清哪个版本是最新的。",
+      "expected_output": "应识别为Tier 2场景。需要：1)分析5个文件中的重复代码 2)提取shared/pic/统一PIC求解器 3)重构现有文件从shared导入 4)创建CLAUDE.md路由索引 5)创建knowledge/目录。不应创建tests/（除非用户要求）。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "我就想跑个数据分析，处理一个CSV文件画几张图。需不需要搞那些skill、knowledge什么的东西？感觉好复杂。",
+      "expected_output": "应识别为Tier 1或更低。只创建简短的CLAUDE.md即可（常用命令+文件说明）。明确告诉用户不需要knowledge/、shared/、tests/等目录。不能过度设计。",
+      "files": []
+    }
+  ]
+}

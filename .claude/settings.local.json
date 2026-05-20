@@ -43,7 +43,8 @@
       "Bash(curl -sL \"https://lobehub.com/skills/anthropics-skills-pptx/skill.md\")",
       "Bash(npx *)",
       "Bash(curl -sL \"https://lobehub.com/skills/anthropics-skills-pdf/skill.md\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git push *)"
     ]
   }
 }

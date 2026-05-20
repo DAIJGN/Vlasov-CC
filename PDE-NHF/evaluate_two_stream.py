@@ -1,16 +1,18 @@
 # 双流不稳定性 PDE-NHF 评估脚本
 # 加载训练好的模型，正向积分并与 PIC ground truth 对比
 
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import torch
-import torch.nn as nn
-import torch.distributions as D
-from torch.autograd import grad
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 import random
+
+from shared.models.hamiltonian import NeuralHamiltonianFlow
 
 
 class Parser:
@@ -34,58 +36,6 @@ def set_seed(seed):
         torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-
-
-class Potential(nn.Module):
-    def __init__(self, hidden_dim=256):
-        super().__init__()
-        self.phi = nn.Sequential(
-            nn.Linear(1, hidden_dim),
-            nn.Softplus(),
-            nn.Linear(hidden_dim, hidden_dim)
-        )
-        self.rho = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.Softplus(),
-            nn.Linear(hidden_dim, 1)
-        )
-
-    def forward(self, q):
-        q_centered = q - q.mean(dim=1, keepdim=True)
-        phi_q = self.phi(q_centered.unsqueeze(-1))
-        pooled = phi_q.sum(dim=1)
-        return self.rho(pooled).squeeze(-1)
-
-
-class NeuralHamiltonianFlow(nn.Module):
-    def __init__(self, L_steps, dt):
-        super().__init__()
-        self.L = L_steps
-        self.dt = dt
-        self.V_net = Potential()
-        self.register_parameter(name='a', param=torch.nn.Parameter(1.0 * torch.ones(1)))
-
-    def potential_energy(self, q):
-        return self.V_net(q)
-
-    def leapfrog_integrator(self, q, p, L_steps, dt):
-        V = self.potential_energy(q)
-        grad_q, = grad(V.sum(), q, create_graph=False)
-
-        for step in range(L_steps):
-            p = p - 0.5 * dt * grad_q
-            q = q + self.a**2 * p * dt
-            V = self.potential_energy(q)
-            grad_q, = grad(V.sum(), q, create_graph=False)
-            p = p - 0.5 * dt * grad_q
-
-        return q, p
-
-    def sample(self, q0, p0, nsteps, delta_t):
-        q0, p0 = q0.unsqueeze(0), p0.unsqueeze(0)
-        q0.requires_grad, p0.requires_grad = True, True
-        q, p = self.leapfrog_integrator(q0, p0, nsteps, -delta_t)
-        return q.detach(), p.detach()
 
 
 def wasserstein_1d(u_values, v_values):

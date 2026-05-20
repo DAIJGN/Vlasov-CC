@@ -1,41 +1,14 @@
 """v_spread 受控对比评估：加载三个模型，生成 Loss+相空间对比图"""
-import torch, numpy as np, sys
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import torch, numpy as np
 import torch.nn as nn
-from torch.autograd import grad
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-# ===== Model Definition (must match training) =====
-class Potential(nn.Module):
-    def __init__(self, hidden_dim=256):
-        super().__init__()
-        self.phi = nn.Sequential(nn.Linear(1, hidden_dim), nn.Softplus(), nn.Linear(hidden_dim, hidden_dim))
-        self.rho = nn.Sequential(nn.Linear(hidden_dim, hidden_dim), nn.Softplus(), nn.Linear(hidden_dim, 1))
-    def forward(self, q):
-        qc = q - q.mean(dim=1, keepdim=True)
-        return self.rho(self.phi(qc.unsqueeze(-1)).sum(dim=1)).squeeze(-1)
-
-class NHF(nn.Module):
-    def __init__(self, L_steps, dt):
-        super().__init__()
-        self.L, self.dt = L_steps, dt
-        self.V_net = Potential()
-        self.register_parameter(name='a', param=nn.Parameter(torch.ones(1)))
-    def potential_energy(self, q): return self.V_net(q)
-    def leapfrog_integrator(self, q, p, L_s, dt):
-        V = self.potential_energy(q)
-        gq, = grad(V.sum(), q, create_graph=False)
-        for _ in range(L_s):
-            p = p - 0.5*dt*gq; q = q + self.a**2*p*dt
-            V = self.potential_energy(q); gq, = grad(V.sum(), q, create_graph=False)
-            p = p - 0.5*dt*gq
-        return q, p
-    def sample(self, q0, p0, nsteps, delta_t):
-        q0, p0 = q0.unsqueeze(0), p0.unsqueeze(0)
-        q0.requires_grad, p0.requires_grad = True, True
-        q, p = self.leapfrog_integrator(q0, p0, nsteps, -delta_t)
-        return q.detach().cpu().numpy().squeeze(0), p.detach().cpu().numpy().squeeze(0)
+from shared.models.hamiltonian import NeuralHamiltonianFlow
 
 def w1(u, v):
     return np.sum(np.abs(np.sort(u) - np.sort(v))) / len(u)
@@ -62,7 +35,7 @@ for row, (folder, vsp, color) in enumerate(configs):
     Cond = np.load(f'data/two_stream/{folder}/Cond.npy')
 
     # Load model
-    model = NHF(L_steps=L_steps, dt=-dt).to(device).double()
+    model = NeuralHamiltonianFlow(L_steps=L_steps, dt=-dt).to(device).double()
     try:
         model.load_state_dict(torch.load(f'models/two_stream/{folder}/model_final', map_location=device))
         model.eval()
@@ -81,6 +54,7 @@ for row, (folder, vsp, color) in enumerate(configs):
     q0 = torch.tensor(Q00[test_idx], dtype=torch.float64).to(device)
     p0 = torch.tensor(P00[test_idx], dtype=torch.float64).to(device)
     q_pred, p_pred = model.sample(q0, p0, nsteps=L_steps, delta_t=dt)
+    q_pred, p_pred = q_pred.cpu().numpy().squeeze(0), p_pred.cpu().numpy().squeeze(0)
 
     q_true, p_true = Q25[test_idx], P25[test_idx]
     w1_q = w1(q_pred, q_true)
@@ -127,7 +101,7 @@ for row, (folder, vsp, color) in enumerate(configs):
     P00 = np.load(f'data/two_stream/{folder}/P00.npy')
     Cond = np.load(f'data/two_stream/{folder}/Cond.npy')
 
-    model = NHF(L_steps=L_steps, dt=-dt).to(device).double()
+    model = NeuralHamiltonianFlow(L_steps=L_steps, dt=-dt).to(device).double()
     try:
         model.load_state_dict(torch.load(f'models/two_stream/{folder}/model_final', map_location=device))
         model.eval()
@@ -143,6 +117,7 @@ for row, (folder, vsp, color) in enumerate(configs):
     q0 = torch.tensor(Q00[test_idx], dtype=torch.float64).to(device)
     p0 = torch.tensor(P00[test_idx], dtype=torch.float64).to(device)
     q_pred, p_pred = model.sample(q0, p0, nsteps=L_steps, delta_t=dt)
+    q_pred, p_pred = q_pred.cpu().numpy().squeeze(0), p_pred.cpu().numpy().squeeze(0)
     q_true, p_true = Q25[test_idx], P25[test_idx]
     w1_q = w1(q_pred, q_true)
     w1_p = w1(p_pred, p_true)

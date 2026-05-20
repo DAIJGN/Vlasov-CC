@@ -1,17 +1,18 @@
 """双流 PDE-NHF 快速训练验证 (50 epochs, Q25/P25, L=25)"""
-import torch, numpy as np, random, sys
-import torch.nn as nn
-import torch.distributions as D
-from torch.autograd import grad
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import torch, numpy as np, random
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
+
+from shared.models.hamiltonian import TwoStreamPriorNHF
 
 torch.manual_seed(1); np.random.seed(1); random.seed(1)
 
 Q = np.load('data/two_stream/Q25.npy')
 P = np.load('data/two_stream/P25.npy')
 Cond = np.load('data/two_stream/Cond.npy')
-L_domain = 10.0
 
 N_train, N_val = 150, 50
 Q_train = torch.tensor(Q[:N_train], dtype=float)
@@ -30,44 +31,7 @@ class QPCondDataset(Dataset):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'使用设备: {device}')
 
-class Potential(nn.Module):
-    def __init__(self, hidden_dim=256):
-        super().__init__()
-        self.phi = nn.Sequential(nn.Linear(1, hidden_dim), nn.Softplus(), nn.Linear(hidden_dim, hidden_dim))
-        self.rho = nn.Sequential(nn.Linear(hidden_dim, hidden_dim), nn.Softplus(), nn.Linear(hidden_dim, 1))
-    def forward(self, q):
-        qc = q - q.mean(dim=1, keepdim=True)
-        return self.rho(self.phi(qc.unsqueeze(-1)).sum(dim=1)).squeeze(-1)
-
-class NHF(nn.Module):
-    def __init__(self, L_steps, dt):
-        super().__init__()
-        self.L, self.dt = L_steps, dt
-        self.V_net = Potential()
-        self.register_parameter(name='a', param=nn.Parameter(torch.ones(1)))
-    def potential_energy(self, q): return self.V_net(q)
-    def leapfrog_integrator(self, q, p, L_s, dt):
-        V = self.potential_energy(q)
-        gq, = grad(V.sum(), q, create_graph=True)
-        for _ in range(L_s):
-            p = p - 0.5*dt*gq; q = q + self.a**2*p*dt
-            V = self.potential_energy(q); gq, = grad(V.sum(), q, create_graph=True)
-            p = p - 0.5*dt*gq
-        return q, p
-    def forward(self, q, p, cond):
-        vs, vsp = cond[:,0].unsqueeze(1), cond[:,1].unsqueeze(1)
-        q.requires_grad, p.requires_grad = True, True
-        q, p = self.leapfrog_integrator(q, p, self.L, self.dt)
-        return q, p, vs, vsp
-    def loss(self, q, p, cond):
-        q0, p0, vs, vsp = self.forward(q, p, cond)
-        lp1 = D.Normal(vs, vsp).log_prob(p0)
-        lp2 = D.Normal(-vs, vsp).log_prob(p0)
-        log_p = torch.logsumexp(torch.stack([lp1+np.log(0.5), lp2+np.log(0.5)], dim=-1), dim=-1).sum(dim=1)
-        log_q = -np.log(L_domain) * q0.shape[1]
-        return -(log_q + log_p).mean()
-
-model = NHF(L_steps=25, dt=-0.1).to(device).double()
+model = TwoStreamPriorNHF(L_steps=25, dt=-0.1, L_domain=10.0).to(device).double()
 n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(f'参数量: {n_params}')
 print(f'训练样本: {N_train}, 验证样本: {N_val}')
